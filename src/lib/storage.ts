@@ -56,6 +56,7 @@ function createDefaultProfile(): UserProfile {
       disabilityStatus: '',
     },
     files: {},
+    customFields: {},
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

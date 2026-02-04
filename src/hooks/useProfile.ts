@@ -7,7 +7,9 @@ import {
   createProfile,
   deleteProfile,
   onStorageChange,
+  getJWT,
 } from '@/lib/storage';
+import { pushFields, syncOnLogin } from '@/lib/fields-sync';
 import type { UserProfile } from '@/types/profile';
 
 export function useProfile() {
@@ -45,6 +47,11 @@ export function useProfile() {
   const saveProfile = useCallback(async (updatedProfile: UserProfile) => {
     await updateProfile(updatedProfile);
     setProfile(updatedProfile);
+    
+    const jwt = await getJWT();
+    if (jwt && updatedProfile.customFields) {
+      pushFields(updatedProfile.customFields).catch(() => {});
+    }
   }, []);
 
   const addProfile = useCallback(async (name: string) => {
@@ -58,6 +65,20 @@ export function useProfile() {
     await loadData();
   }, [loadData]);
 
+  const syncCustomFields = useCallback(async () => {
+    if (!profile) return;
+    
+    const jwt = await getJWT();
+    if (!jwt) return;
+
+    const localFields = profile.customFields || {};
+    const mergedFields = await syncOnLogin(localFields);
+    
+    const updatedProfile = { ...profile, customFields: mergedFields };
+    await updateProfile(updatedProfile);
+    setProfile(updatedProfile);
+  }, [profile]);
+
   return {
     profile,
     profiles,
@@ -67,5 +88,6 @@ export function useProfile() {
     addProfile,
     removeProfile,
     refreshProfile: loadData,
+    syncCustomFields,
   };
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Upload, X } from 'lucide-react';
+import { Save, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +14,13 @@ interface ProfileEditorProps {
 }
 
 export default function ProfileEditor({ profile, onSave }: ProfileEditorProps) {
-  const [formData, setFormData] = useState(profile);
+  const [formData, setFormData] = useState({
+    ...profile,
+    customFields: profile.customFields || {},
+  });
   const [saving, setSaving] = useState(false);
+  const [newFieldKey, setNewFieldKey] = useState('');
+  const [newFieldValue, setNewFieldValue] = useState('');
 
   const handleChange = (path: string, value: string | boolean | number) => {
     setFormData((prev) => {
@@ -58,6 +63,38 @@ export default function ProfileEditor({ profile, onSave }: ProfileEditorProps) {
       files: {
         ...prev.files,
         [type]: undefined,
+      },
+    }));
+  };
+
+  const handleAddCustomField = () => {
+    const key = newFieldKey.trim();
+    if (!key) return;
+    
+    setFormData((prev) => ({
+      ...prev,
+      customFields: {
+        ...prev.customFields,
+        [key]: newFieldValue,
+      },
+    }));
+    setNewFieldKey('');
+    setNewFieldValue('');
+  };
+
+  const handleRemoveCustomField = (key: string) => {
+    setFormData((prev) => {
+      const { [key]: _, ...rest } = prev.customFields;
+      return { ...prev, customFields: rest };
+    });
+  };
+
+  const handleUpdateCustomField = (key: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      customFields: {
+        ...prev.customFields,
+        [key]: value,
       },
     }));
   };
@@ -268,6 +305,65 @@ export default function ProfileEditor({ profile, onSave }: ProfileEditorProps) {
                 <span className="text-xs">Upload Cover Letter</span>
               </label>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm">Custom Fields</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Object.entries(formData.customFields).map(([key, value]) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <Label className="text-xs text-muted-foreground">{key}</Label>
+                <Input
+                  value={value}
+                  onChange={(e) => handleUpdateCustomField(key, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 mt-4 shrink-0"
+                onClick={() => handleRemoveCustomField(key)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+          
+          <div className="border-t pt-3 mt-3">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  placeholder="Field name"
+                  value={newFieldKey}
+                  onChange={(e) => setNewFieldKey(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  placeholder="Value"
+                  value={newFieldValue}
+                  onChange={(e) => setNewFieldValue(e.target.value)}
+                  className="h-8 text-sm"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustomField()}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={handleAddCustomField}
+                disabled={!newFieldKey.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

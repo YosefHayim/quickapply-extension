@@ -5,6 +5,8 @@ import { healthRoute } from './routes/health';
 import { userRoute } from './routes/user';
 import { authRoute } from './routes/auth';
 import { webhookRoute } from './routes/webhooks';
+import { fieldsRoute } from './routes/fields';
+import { submissionsRoute } from './routes/submissions';
 
 type Bindings = {
   ENVIRONMENT: string;
@@ -36,6 +38,8 @@ app.route('/health', healthRoute);
 app.route('/auth', authRoute);
 app.route('/user', userRoute);
 app.route('/webhooks', webhookRoute);
+app.route('/fields', fieldsRoute);
+app.route('/submissions', submissionsRoute);
 
 app.get('/', (c) => {
   return c.json({

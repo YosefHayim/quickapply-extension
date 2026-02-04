@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { Database } from '../db';
 import { subscriptions, dailyUsage } from '../db/schema';
 
@@ -111,4 +111,38 @@ export async function getSubscriptionByUserId(db: Database, userId: string) {
     .where(eq(subscriptions.userId, userId));
   
   return results[0] ?? null;
+}
+
+export async function getDailyUsage(db: Database, userId: string): Promise<number> {
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  
+  const usageRecords = await db
+    .select()
+    .from(dailyUsage)
+    .where(and(eq(dailyUsage.userId, userId), eq(dailyUsage.date, todayUtc)));
+  
+  return usageRecords[0]?.fillCount ?? 0;
+}
+
+export async function incrementDailyUsage(db: Database, userId: string): Promise<number> {
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  const id = `${userId}_${todayUtc}`;
+  
+  const result = await db
+    .insert(dailyUsage)
+    .values({
+      id,
+      userId,
+      date: todayUtc,
+      fillCount: 1,
+    })
+    .onConflictDoUpdate({
+      target: [dailyUsage.userId, dailyUsage.date],
+      set: {
+        fillCount: sql`${dailyUsage.fillCount} + 1`,
+      },
+    })
+    .returning();
+  
+  return result[0]?.fillCount ?? 1;
 }

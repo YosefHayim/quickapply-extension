@@ -70,6 +70,7 @@ export interface UserProfile {
     resume?: StoredFile;
     coverLetter?: StoredFile;
   };
+  customFields: Record<string, string>;
   createdAt: number;
   updatedAt: number;
 }

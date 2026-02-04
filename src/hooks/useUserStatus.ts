@@ -11,6 +11,7 @@ interface UseUserStatusReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  decrementFillsRemaining: () => Promise<void>;
 }
 
 async function getCachedStatus(): Promise<UserStatus | null> {
@@ -35,6 +36,26 @@ async function setCachedStatus(status: UserStatus): Promise<void> {
 
 async function clearCachedStatus(): Promise<void> {
   await chrome.storage.local.remove([CACHE_KEY, CACHE_TIMESTAMP_KEY]);
+}
+
+export async function getUserStatusFromCache(): Promise<UserStatus | null> {
+  return getCachedStatus();
+}
+
+export async function updateCachedFillsRemaining(newFillsRemaining: number, fillsToday: number): Promise<void> {
+  const cached = await getCachedStatus();
+  if (!cached) return;
+
+  const updatedStatus: UserStatus = {
+    ...cached,
+    usage: {
+      ...cached.usage,
+      fillsToday,
+      fillsRemaining: newFillsRemaining,
+    },
+  };
+
+  await setCachedStatus(updatedStatus);
 }
 
 export function useUserStatus(): UseUserStatusReturn {
@@ -69,6 +90,22 @@ export function useUserStatus(): UseUserStatusReturn {
     }
   }, []);
 
+  const decrementFillsRemaining = useCallback(async () => {
+    if (!status || status.usage.fillsRemaining === null) return;
+
+    const updatedStatus: UserStatus = {
+      ...status,
+      usage: {
+        ...status.usage,
+        fillsToday: status.usage.fillsToday + 1,
+        fillsRemaining: Math.max(0, status.usage.fillsRemaining - 1),
+      },
+    };
+
+    setStatus(updatedStatus);
+    await setCachedStatus(updatedStatus);
+  }, [status]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -96,5 +133,6 @@ export function useUserStatus(): UseUserStatusReturn {
     isLoading,
     error,
     refetch: fetchStatus,
+    decrementFillsRemaining,
   };
 }

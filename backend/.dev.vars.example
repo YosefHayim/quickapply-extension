@@ -1,0 +1,8 @@
+# Copy this file to .dev.vars and fill in your local development values
+# .dev.vars is gitignored and used by wrangler dev
+
+DATABASE_URL=postgresql://user:password@localhost:5432/quickapply
+JWT_SECRET=your-jwt-secret-key-here
+JWT_REFRESH_SECRET=your-jwt-refresh-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id-here
+WEBHOOK_SECRET=your-webhook-secret-here

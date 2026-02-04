@@ -1,11 +1,14 @@
-import type { UserProfile, ExtensionSettings, LicenseInfo } from '@/types/profile';
+import type { UserProfile, ExtensionSettings, LicenseInfo, User } from '@/types/profile';
 import { generateId } from './utils';
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   PROFILES: 'profiles',
   ACTIVE_PROFILE_ID: 'activeProfileId',
   SETTINGS: 'settings',
   LICENSE: 'license',
+  JWT: 'jwt',
+  REFRESH_TOKEN: 'refreshToken',
+  USER: 'user',
 } as const;
 
 function createDefaultProfile(): UserProfile {
@@ -171,4 +174,41 @@ export function onStorageChange(
   };
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);
+}
+
+// Security: JWT in session storage (ephemeral), refresh token in local storage (persistent)
+export async function storeAuthTokens(jwt: string, refreshToken: string, user: User): Promise<void> {
+  await chrome.storage.session.set({ [STORAGE_KEYS.JWT]: jwt });
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken,
+    [STORAGE_KEYS.USER]: user,
+  });
+}
+
+export async function getJWT(): Promise<string | null> {
+  const result = await chrome.storage.session.get(STORAGE_KEYS.JWT);
+  return (result[STORAGE_KEYS.JWT] as string) || null;
+}
+
+export async function setJWT(jwt: string): Promise<void> {
+  await chrome.storage.session.set({ [STORAGE_KEYS.JWT]: jwt });
+}
+
+export async function getRefreshToken(): Promise<string | null> {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.REFRESH_TOKEN);
+  return (result[STORAGE_KEYS.REFRESH_TOKEN] as string) || null;
+}
+
+export async function setRefreshToken(refreshToken: string): Promise<void> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken });
+}
+
+export async function getStoredUser(): Promise<User | null> {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.USER);
+  return (result[STORAGE_KEYS.USER] as User) || null;
+}
+
+export async function clearAuth(): Promise<void> {
+  await chrome.storage.session.remove(STORAGE_KEYS.JWT);
+  await chrome.storage.local.remove([STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER]);
 }

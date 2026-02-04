@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { Moon, Sun, Settings, Zap, FileText, User, CreditCard } from 'lucide-react';
+import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTheme } from '@/hooks/useTheme';
 import { useProfile } from '@/hooks/useProfile';
-import { useLicense } from '@/hooks/useLicense';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserStatus } from '@/hooks/useUserStatus';
 import ProfileEditor from './components/ProfileEditor';
 import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
+import AuthPrompt from './components/AuthPrompt';
+import StatusBanner from './components/StatusBanner';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
-  const { profile, profiles, loading, switchProfile, saveProfile } = useProfile();
-  const { plan, isPremium, dailyLimit } = useLicense();
+  const { profile, profiles, loading: profileLoading, switchProfile, saveProfile } = useProfile();
+  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const { status } = useUserStatus();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
 
@@ -36,7 +40,21 @@ export default function App() {
     }
   };
 
-  if (loading) {
+  const isSubscribed = status?.subscription.isActive ?? false;
+
+  if (authLoading) {
+    return (
+      <div className="w-[400px] min-h-[500px] flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthPrompt onLogin={login} />;
+  }
+
+  if (profileLoading) {
     return (
       <div className="w-[400px] min-h-[500px] flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -45,21 +63,28 @@ export default function App() {
   }
 
   return (
-    <div className="w-[400px] min-h-[500px] bg-background text-foreground">
-      <header className="flex items-center justify-between p-4 border-b">
+    <div className="w-[400px] min-h-[500px] bg-background text-foreground flex flex-col">
+      <header className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
           <span className="font-semibold">QuickApply</span>
-          <Badge variant={isPremium ? 'default' : 'secondary'} className="text-xs">
-            {plan.toUpperCase()}
-          </Badge>
+          {isSubscribed && (
+            <Badge className="text-xs bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0">
+              Pro
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+          <Button variant="ghost" size="icon" onClick={logout} title="Sign out">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </header>
+
+      {status && <StatusBanner status={status} onUpgrade={() => setActiveTab('pricing')} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
         <TabsList className="grid w-full grid-cols-4">
@@ -121,23 +146,6 @@ export default function App() {
               <CardContent className="py-3">
                 <div className="text-center text-sm">
                   Filled {fillStatus.filled} of {fillStatus.total} fields
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {!isPremium && (
-            <Card className="bg-muted/50">
-              <CardContent className="py-3">
-                <div className="text-xs text-center text-muted-foreground">
-                  {dailyLimit === Infinity ? 'Unlimited' : `${dailyLimit} fills/day`} on {plan} plan
-                  <Button
-                    variant="link"
-                    className="text-xs h-auto p-0 ml-1"
-                    onClick={() => setActiveTab('pricing')}
-                  >
-                    Upgrade
-                  </Button>
                 </div>
               </CardContent>
             </Card>

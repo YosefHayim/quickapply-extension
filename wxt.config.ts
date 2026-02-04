@@ -7,7 +7,11 @@ export default defineConfig({
     name: 'QuickApply - Job Application AutoFill',
     description: 'One-click auto-fill for job applications with resume upload. Save hours on repetitive form filling.',
     version: '1.0.0',
-    permissions: ['storage', 'activeTab', 'scripting'],
+    permissions: ['storage', 'activeTab', 'scripting', 'identity'],
+    oauth2: {
+      client_id: '${VITE_GOOGLE_CLIENT_ID}',
+      scopes: ['openid', 'email', 'profile'],
+    },
     host_permissions: [
       'https://www.linkedin.com/*',
       'https://jobs.lever.co/*',

@@ -104,6 +104,13 @@ export interface FillResult {
 
 export type PlanType = 'free' | 'pro' | 'lifetime';
 
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  picture?: string;
+}
+
 export interface PricingPlan {
   id: string;
   name: string;

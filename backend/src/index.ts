@@ -2,9 +2,17 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { healthRoute } from './routes/health';
+import { userRoute } from './routes/user';
+import { authRoute } from './routes/auth';
+import { webhookRoute } from './routes/webhooks';
 
 type Bindings = {
   ENVIRONMENT: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  DATABASE_URL: string;
+  WEBHOOK_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -25,6 +33,9 @@ app.use(
 );
 
 app.route('/health', healthRoute);
+app.route('/auth', authRoute);
+app.route('/user', userRoute);
+app.route('/webhooks', webhookRoute);
 
 app.get('/', (c) => {
   return c.json({

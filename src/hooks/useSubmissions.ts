@@ -1,17 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { authenticatedFetch, AuthError } from '@/lib/api';
-
-export interface Submission {
-  id: string;
-  jobTitle: string | null;
-  url: string;
-  platform: string;
-  filledAt: string;
-}
-
-interface SubmissionsResponse {
-  submissions: Submission[];
-}
+import { AuthError } from '@/lib/api';
+import { getSubmissions, type Submission } from '@/lib/submissions';
 
 interface GroupedSubmissions {
   label: string;
@@ -56,11 +45,11 @@ function groupSubmissionsByDate(submissions: Submission[]): GroupedSubmissions[]
   const labelOrder: string[] = [];
 
   const sorted = [...submissions].sort(
-    (a, b) => new Date(b.filledAt).getTime() - new Date(a.filledAt).getTime()
+    (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
 
   for (const submission of sorted) {
-    const label = getDateLabel(new Date(submission.filledAt));
+    const label = getDateLabel(new Date(submission.submittedAt));
     
     if (!groups.has(label)) {
       groups.set(label, []);
@@ -85,13 +74,13 @@ function calculateStats(submissions: Submission[]): SubmissionStats {
   let todayCount = 0;
 
   for (const submission of submissions) {
-    const date = new Date(submission.filledAt);
+    const date = new Date(submission.submittedAt);
     const submissionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     if (submissionDate.getTime() === today.getTime()) {
       todayCount++;
       thisWeek++;
-    } else if (date >= weekAgo) {
+    } else if (submissionDate >= weekAgo) {
       thisWeek++;
     }
   }
@@ -103,7 +92,8 @@ function calculateStats(submissions: Submission[]): SubmissionStats {
   };
 }
 
-export function useSubmissions() {
+export function useSubmissions(options: { limit?: number; offset?: number } = {}) {
+  const { limit = 50, offset = 0 } = options;
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +103,7 @@ export function useSubmissions() {
     setError(null);
     
     try {
-      const response = await authenticatedFetch<SubmissionsResponse>('/submissions');
+      const response = await getSubmissions(limit, offset);
       setSubmissions(response.submissions || []);
     } catch (err) {
       if (err instanceof AuthError) {
@@ -125,7 +115,7 @@ export function useSubmissions() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [limit, offset]);
 
   useEffect(() => {
     loadSubmissions();

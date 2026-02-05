@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSubmissions, type Submission } from '@/hooks/useSubmissions';
+import { useSubmissions } from '@/hooks/useSubmissions';
+import type { Submission } from '@/lib/submissions';
 
 interface ApplicationHistoryProps {
   onBack: () => void;
@@ -73,8 +74,8 @@ interface ApplicationItemProps {
 
 function ApplicationItem({ submission }: ApplicationItemProps) {
   const domain = extractDomain(submission.url);
-  const time = formatTime(submission.filledAt);
-  const title = submission.jobTitle || 'Job Application';
+  const time = formatTime(submission.submittedAt);
+  const title = submission.jobTitle ?? 'Job Application';
 
   const handleClick = () => {
     chrome.tabs.create({ url: submission.url });
@@ -83,6 +84,9 @@ function ApplicationItem({ submission }: ApplicationItemProps) {
   return (
     <button
       onClick={handleClick}
+      type="button"
+      role="link"
+      aria-label={`Open ${title} on ${domain}`}
       className="w-full flex items-center gap-3 p-3 bg-[#F5F5F5] dark:bg-[#1A1A1A] rounded-lg hover:bg-[#EBEBEB] dark:hover:bg-[#252525] transition-colors text-left group"
     >
       <div className="w-9 h-9 rounded-full bg-[#ECFDF5] dark:bg-[#064E3B] flex items-center justify-center shrink-0">

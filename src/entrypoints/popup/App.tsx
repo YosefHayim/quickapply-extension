@@ -22,7 +22,6 @@ export default function App() {
   const { status } = useUserStatus();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
 
   const handleFillForm = async () => {
     try {
@@ -64,10 +63,6 @@ export default function App() {
     );
   }
 
-  if (showHistory) {
-    return <ApplicationHistory onBack={() => setShowHistory(false)} />;
-  }
-
   return (
     <div className="w-[400px] min-h-[500px] bg-background text-foreground flex flex-col">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
@@ -100,7 +95,7 @@ export default function App() {
           <TabsTrigger value="profile">
             <User className="h-4 w-4" />
           </TabsTrigger>
-          <TabsTrigger value="history" onClick={() => setShowHistory(true)}>
+          <TabsTrigger value="history">
             <History className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="pricing">
@@ -167,6 +162,10 @@ export default function App() {
 
         <TabsContent value="profile" className="mt-4">
           {profile && <ProfileEditor profile={profile} onSave={saveProfile} />}
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4">
+          <ApplicationHistory onBack={() => setActiveTab('dashboard')} />
         </TabsContent>
 
         <TabsContent value="pricing" className="mt-4">

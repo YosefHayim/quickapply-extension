@@ -51,5 +51,3 @@ export function UpgradeComplete({ onStart, className }: UpgradeCompleteProps) {
     </div>
   );
 }
-
-export default UpgradeComplete;

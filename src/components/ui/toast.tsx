@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const toastVariants = cva(
@@ -21,7 +21,7 @@ const toastVariants = cva(
 );
 
 const toastIcons = {
-  success: CheckCircle,
+  success: CheckCircle2,
   error: XCircle,
   warning: AlertTriangle,
   info: Info,
@@ -75,7 +75,7 @@ const ToastContainer = React.forwardRef<HTMLDivElement, ToastContainerProps>(
       <div
         ref={ref}
         className={cn(
-          'fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2',
+          'fixed top-4 right-4 z-50 flex flex-col gap-2',
           className
         )}
       >

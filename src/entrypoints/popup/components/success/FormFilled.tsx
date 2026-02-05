@@ -39,5 +39,3 @@ export function FormFilled({ fieldsFilled = 15, onDone, className }: FormFilledP
     </div>
   );
 }
-
-export default FormFilled;

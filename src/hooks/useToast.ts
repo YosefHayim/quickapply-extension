@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ToastVariant } from '@/components/ui/toast';
+import { generateId } from '@/lib/utils';
 
 export interface ToastState {
   id: string;
@@ -34,7 +35,7 @@ export function useToast() {
         clearTimeout(timeoutRef.current);
       }
 
-      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const id = generateId();
       setToast({ id, type, message, duration });
 
       if (duration > 0) {

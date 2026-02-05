@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut } from 'lucide-react';
+import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,18 +8,22 @@ import { useTheme } from '@/hooks/useTheme';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import ProfileEditor from './components/ProfileEditor';
 import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
 import AuthPrompt from './components/AuthPrompt';
 import StatusBanner from './components/StatusBanner';
 import ResumeManager from './components/ResumeManager';
+import ApplicationHistory from './components/ApplicationHistory';
+import { Onboarding } from './components/onboarding';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { profile, profiles, loading: profileLoading, switchProfile, saveProfile } = useProfile();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { status } = useUserStatus();
+  const onboarding = useOnboarding();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
   const [showResumeManager, setShowResumeManager] = useState(false);
@@ -44,7 +48,7 @@ export default function App() {
 
   const isSubscribed = status?.subscription.isActive ?? false;
 
-  if (authLoading) {
+  if (authLoading || onboarding.isLoading) {
     return (
       <div className="w-[400px] min-h-[500px] flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -54,6 +58,10 @@ export default function App() {
 
   if (!isAuthenticated) {
     return <AuthPrompt onLogin={login} />;
+  }
+
+  if (!onboarding.isCompleted) {
+    return <Onboarding onboarding={onboarding} onComplete={() => {}} />;
   }
 
   if (profileLoading) {
@@ -93,12 +101,15 @@ export default function App() {
       {status && <StatusBanner status={status} onUpgrade={() => setActiveTab('pricing')} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">
             <Zap className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="profile">
             <User className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="history">
+            <History className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="pricing">
             <CreditCard className="h-4 w-4" />
@@ -170,6 +181,10 @@ export default function App() {
               onOpenResumeManager={() => setShowResumeManager(true)}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4">
+          <ApplicationHistory onBack={() => setActiveTab('dashboard')} />
         </TabsContent>
 
         <TabsContent value="pricing" className="mt-4">

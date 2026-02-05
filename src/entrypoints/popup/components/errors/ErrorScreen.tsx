@@ -4,31 +4,29 @@ import { cn } from '@/lib/utils';
 
 export interface ErrorScreenProps {
   icon: LucideIcon;
-  iconColor: string;
-  iconBgLight: string;
-  iconBgDark: string;
+  iconClassName: string;
+  iconBgClassName: string;
   title: string;
   subtitle: string;
   buttonText: string;
   onRetry: () => void;
   buttonVariant?: 'primary' | 'outline';
   countdownText?: string;
-  countdownColor?: string;
+  countdownClassName?: string;
   className?: string;
 }
 
 export default function ErrorScreen({
   icon: Icon,
-  iconColor,
-  iconBgLight,
-  iconBgDark,
+  iconClassName,
+  iconBgClassName,
   title,
   subtitle,
   buttonText,
   onRetry,
   buttonVariant = 'primary',
   countdownText,
-  countdownColor,
+  countdownClassName,
   className,
 }: ErrorScreenProps) {
   return (
@@ -42,11 +40,10 @@ export default function ErrorScreen({
         <div
           className={cn(
             'flex items-center justify-center w-20 h-20 rounded-full transition-colors',
-            iconBgLight,
-            `dark:${iconBgDark}`
+            iconBgClassName
           )}
         >
-          <Icon className="w-10 h-10" style={{ color: iconColor }} strokeWidth={1.75} />
+          <Icon className={cn('w-10 h-10', iconClassName)} strokeWidth={1.75} />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -55,7 +52,9 @@ export default function ErrorScreen({
         </div>
 
         {countdownText && (
-          <p className="text-sm font-medium" style={{ color: countdownColor || '#3B82F6' }}>
+          <p
+            className={cn('text-sm font-medium', countdownClassName || 'text-blue-500')}
+          >
             {countdownText}
           </p>
         )}

@@ -3,12 +3,16 @@ import { Hourglass } from 'lucide-react';
 import ErrorScreen from './ErrorScreen';
 
 interface RateLimitedProps {
-  onGoBack: () => void;
+  onRetry: () => void;
   retryAfter?: number;
 }
 
-export default function RateLimited({ onGoBack, retryAfter = 30 }: RateLimitedProps) {
+export default function RateLimited({ onRetry, retryAfter = 30 }: RateLimitedProps) {
   const [secondsLeft, setSecondsLeft] = useState(retryAfter);
+
+  useEffect(() => {
+    setSecondsLeft(retryAfter);
+  }, [retryAfter]);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -28,16 +32,15 @@ export default function RateLimited({ onGoBack, retryAfter = 30 }: RateLimitedPr
   return (
     <ErrorScreen
       icon={Hourglass}
-      iconColor="#3B82F6"
-      iconBgLight="bg-blue-100"
-      iconBgDark="bg-blue-950"
+      iconClassName="text-blue-500"
+      iconBgClassName="bg-blue-100 dark:bg-blue-950"
       title="Too Many Requests"
       subtitle="Please wait a moment before trying again."
       buttonText="Go Back"
       buttonVariant="outline"
-      onRetry={onGoBack}
+      onRetry={onRetry}
       countdownText={countdownText}
-      countdownColor="#3B82F6"
+      countdownClassName="text-blue-500"
     />
   );
 }

@@ -9,9 +9,8 @@ export default function SessionExpired({ onRetry }: SessionExpiredProps) {
   return (
     <ErrorScreen
       icon={Clock}
-      iconColor="#F59E0B"
-      iconBgLight="bg-amber-100"
-      iconBgDark="bg-amber-950"
+      iconClassName="text-amber-500"
+      iconBgClassName="bg-amber-100 dark:bg-amber-950"
       title="Session Expired"
       subtitle="Your session has timed out. Please sign in again to continue."
       buttonText="Sign In Again"

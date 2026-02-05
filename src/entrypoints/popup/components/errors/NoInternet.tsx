@@ -9,9 +9,8 @@ export default function NoInternet({ onRetry }: NoInternetProps) {
   return (
     <ErrorScreen
       icon={WifiOff}
-      iconColor="#EF4444"
-      iconBgLight="bg-red-100"
-      iconBgDark="bg-red-950"
+      iconClassName="text-red-500"
+      iconBgClassName="bg-red-100 dark:bg-red-950"
       title="No Internet Connection"
       subtitle="Please check your connection and try again."
       buttonText="Retry"

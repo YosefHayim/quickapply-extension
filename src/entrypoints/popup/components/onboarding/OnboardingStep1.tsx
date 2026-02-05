@@ -18,7 +18,7 @@ export default function OnboardingStep1({ onNext }: OnboardingStep1Props) {
             Welcome to QuickApply
           </h1>
           <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
-            Fill job applications 10x faster with AI-powered auto-fill
+            Fill job applications faster with AI-powered auto-fill
           </p>
         </div>
       </div>
@@ -33,6 +33,7 @@ export default function OnboardingStep1({ onNext }: OnboardingStep1Props) {
         </Button>
 
         <div className="flex items-center justify-center gap-2">
+          <span className="sr-only">Step 1 of 3</span>
           <div className="w-2 h-2 rounded-full bg-primary" />
           <div className="w-2 h-2 rounded-full bg-border" />
           <div className="w-2 h-2 rounded-full bg-border" />

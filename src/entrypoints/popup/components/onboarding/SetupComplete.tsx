@@ -10,7 +10,7 @@ export default function SetupComplete({ hasResume, onFinish }: SetupCompleteProp
   const checklistItems = [
     { label: 'Profile information saved', completed: true },
     { label: 'Resume uploaded successfully', completed: hasResume },
-    { label: '10 free fills available', completed: true },
+    { label: 'Free fills available', completed: true },
   ];
 
   return (

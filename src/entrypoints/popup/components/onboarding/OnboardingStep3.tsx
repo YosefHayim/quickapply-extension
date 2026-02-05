@@ -9,6 +9,7 @@ interface OnboardingStep3Props {
   onSetResume: (file: StoredFile | null) => void;
   onComplete: () => void;
   onBack: () => void;
+  saveError?: string | null;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -23,54 +24,112 @@ export default function OnboardingStep3({
   onSetResume,
   onComplete,
   onBack,
+  saveError,
 }: OnboardingStep3Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = useCallback((file: File): string | null => {
+  const validateFile = useCallback(async (file: File): Promise<string | null> => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
       return 'Please upload a PDF, DOC, or DOCX file';
     }
     if (file.size > MAX_FILE_SIZE) {
       return 'File size must be less than 5MB';
     }
+
+    const headerSlice = file.slice(0, 8);
+    const buffer = await headerSlice.arrayBuffer();
+    const headerBytes = new Uint8Array(buffer);
+
+    const isPdf =
+      headerBytes.length >= 4 &&
+      headerBytes[0] === 0x25 &&
+      headerBytes[1] === 0x50 &&
+      headerBytes[2] === 0x44 &&
+      headerBytes[3] === 0x46;
+
+    const isDoc =
+      headerBytes.length >= 8 &&
+      headerBytes[0] === 0xd0 &&
+      headerBytes[1] === 0xcf &&
+      headerBytes[2] === 0x11 &&
+      headerBytes[3] === 0xe0 &&
+      headerBytes[4] === 0xa1 &&
+      headerBytes[5] === 0xb1 &&
+      headerBytes[6] === 0x1a &&
+      headerBytes[7] === 0xe1;
+
+    const isDocx =
+      headerBytes.length >= 4 &&
+      headerBytes[0] === 0x50 &&
+      headerBytes[1] === 0x4b &&
+      headerBytes[2] === 0x03 &&
+      headerBytes[3] === 0x04;
+
+    if (!isPdf && !isDoc && !isDocx) {
+      return 'File content does not match a valid PDF, DOC, or DOCX file';
+    }
+
     return null;
   }, []);
 
   const handleFile = useCallback(async (file: File) => {
-    const validationError = validateFile(file);
+    const validationError = await validateFile(file);
     if (validationError) {
       setError(validationError);
       return;
     }
 
     setError(null);
-    const base64 = await fileToBase64(file);
-    const storedFile: StoredFile = {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      data: base64,
-      lastModified: file.lastModified,
-    };
-    onSetResume(storedFile);
+    setIsProcessing(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const storedFile: StoredFile = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: base64,
+        lastModified: file.lastModified,
+      };
+      onSetResume(storedFile);
+    } finally {
+      setIsProcessing(false);
+    }
   }, [validateFile, onSetResume]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
+    if (isProcessing) {
+      return;
+    }
+
+    if (!Array.from(e.dataTransfer.types).includes('Files')) {
+      return;
+    }
+
     const file = e.dataTransfer.files[0];
     if (file) {
       handleFile(file);
     }
-  }, [handleFile]);
+  }, [handleFile, isProcessing]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    if (isProcessing) {
+      return;
+    }
+    if (!Array.from(e.dataTransfer.types).includes('Files')) {
+      return;
+    }
+    if (error) {
+      setError(null);
+    }
     setIsDragging(true);
-  }, []);
+  }, [error, isProcessing]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -88,6 +147,13 @@ export default function OnboardingStep3({
     fileInputRef.current?.click();
   };
 
+  const handleContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('button')) {
+      return;
+    }
+    handleBrowseClick();
+  };
+
   return (
     <div className="flex flex-col h-full px-6 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -100,6 +166,20 @@ export default function OnboardingStep3({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
+          onClick={handleContainerClick}
+          onKeyDown={(event) => {
+            if ((event.target as HTMLElement).closest('button')) {
+              return;
+            }
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleBrowseClick();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload your resume by dropping a file here or browsing your files"
+          aria-busy={isProcessing}
           className={`
             h-[180px] rounded-xl border-2 border-dashed transition-colors
             flex flex-col items-center justify-center gap-3 cursor-pointer
@@ -109,7 +189,6 @@ export default function OnboardingStep3({
             }
             ${resumeFile ? 'bg-secondary/50' : ''}
           `}
-          onClick={handleBrowseClick}
         >
           <input
             ref={fileInputRef}
@@ -117,9 +196,15 @@ export default function OnboardingStep3({
             accept=".pdf,.doc,.docx"
             onChange={handleFileSelect}
             className="hidden"
+            aria-label="Upload resume file"
           />
           
-          {resumeFile ? (
+          {isProcessing ? (
+            <>
+              <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-foreground animate-spin" />
+              <p className="text-sm text-muted-foreground">Processing file...</p>
+            </>
+          ) : resumeFile ? (
             <>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Upload className="w-6 h-6 text-primary" />
@@ -138,9 +223,9 @@ export default function OnboardingStep3({
                 size="sm"
                 className="text-xs"
                 onClick={(e) => {
-                  e.stopPropagation();
                   onSetResume(null);
                 }}
+                disabled={isProcessing}
               >
                 Remove
               </Button>
@@ -164,9 +249,9 @@ export default function OnboardingStep3({
                 size="sm"
                 className="h-8 text-xs"
                 onClick={(e) => {
-                  e.stopPropagation();
                   handleBrowseClick();
                 }}
+                disabled={isProcessing}
               >
                 Browse Files
               </Button>
@@ -176,6 +261,9 @@ export default function OnboardingStep3({
 
         {error && (
           <p className="text-xs text-destructive mt-2 text-center">{error}</p>
+        )}
+        {saveError && (
+          <p className="text-xs text-destructive mt-2 text-center">{saveError}</p>
         )}
 
         <div className="flex items-center gap-3 my-5">
@@ -188,12 +276,10 @@ export default function OnboardingStep3({
           type="button"
           variant="outline"
           className="w-full h-11 gap-2"
-          onClick={() => {
-            window.open('https://www.linkedin.com', '_blank');
-          }}
+          disabled
         >
           <Linkedin className="w-4 h-4" />
-          Import from LinkedIn
+          Import from LinkedIn (coming soon)
         </Button>
       </div>
 
@@ -211,12 +297,14 @@ export default function OnboardingStep3({
             type="button" 
             className="flex-1 h-11"
             onClick={onComplete}
+            disabled={isProcessing}
           >
             Complete Setup
           </Button>
         </div>
 
         <div className="flex items-center justify-center gap-2">
+          <span className="sr-only">Step 3 of 3</span>
           <div className="w-2 h-2 rounded-full bg-border" />
           <div className="w-2 h-2 rounded-full bg-border" />
           <div className="w-2 h-2 rounded-full bg-primary" />

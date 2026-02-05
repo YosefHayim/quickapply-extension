@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,8 +17,53 @@ export default function OnboardingStep2({
   onNext, 
   onBack 
 }: OnboardingStep2Props) {
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
+
+  const formatPhone = (value: string) => {
+    const trimmed = value.trim();
+    const digits = trimmed.replace(/\D/g, '');
+    if (!digits) return '';
+
+    if (trimmed.startsWith('+')) {
+      return `+${digits}`;
+    }
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    }
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return `+${digits}`;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const nextErrors: { name?: string; email?: string; phone?: string } = {};
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const phoneDigits = formData.phone.replace(/\\D/g, '');
+
+    if (!formData.name.trim()) {
+      nextErrors.name = 'Full name is required';
+    }
+
+    if (!formData.email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!emailPattern.test(formData.email)) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+
+    if (formData.phone.trim() && phoneDigits.length < 7) {
+      nextErrors.phone = 'Enter a valid phone number';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
     onNext();
   };
 
@@ -39,9 +85,19 @@ export default function OnboardingStep2({
               type="text"
               placeholder="John Doe"
               value={formData.name}
-              onChange={(e) => onUpdate({ name: e.target.value })}
+              onChange={(e) => {
+                onUpdate({ name: e.target.value });
+                if (errors.name) {
+                  setErrors((prev) => ({ ...prev, name: undefined }));
+                }
+              }}
               className="h-10"
+              required
+              aria-invalid={Boolean(errors.name)}
             />
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -53,9 +109,19 @@ export default function OnboardingStep2({
               type="email"
               placeholder="john@example.com"
               value={formData.email}
-              onChange={(e) => onUpdate({ email: e.target.value })}
+              onChange={(e) => {
+                onUpdate({ email: e.target.value });
+                if (errors.email) {
+                  setErrors((prev) => ({ ...prev, email: undefined }));
+                }
+              }}
               className="h-10"
+              required
+              aria-invalid={Boolean(errors.email)}
             />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -67,9 +133,18 @@ export default function OnboardingStep2({
               type="tel"
               placeholder="+1 (555) 000-0000"
               value={formData.phone}
-              onChange={(e) => onUpdate({ phone: e.target.value })}
+              onChange={(e) => {
+                onUpdate({ phone: formatPhone(e.target.value) });
+                if (errors.phone) {
+                  setErrors((prev) => ({ ...prev, phone: undefined }));
+                }
+              }}
               className="h-10"
+              aria-invalid={Boolean(errors.phone)}
             />
+            {errors.phone && (
+              <p className="text-xs text-destructive">{errors.phone}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -103,6 +178,7 @@ export default function OnboardingStep2({
           </div>
 
           <div className="flex items-center justify-center gap-2">
+            <span className="sr-only">Step 2 of 3</span>
             <div className="w-2 h-2 rounded-full bg-border" />
             <div className="w-2 h-2 rounded-full bg-primary" />
             <div className="w-2 h-2 rounded-full bg-border" />

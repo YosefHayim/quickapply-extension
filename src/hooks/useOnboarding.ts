@@ -40,7 +40,8 @@ export function useOnboarding() {
         const result = await chrome.storage.local.get(STORAGE_KEY);
         const isCompleted = result[STORAGE_KEY] === true;
         setState(prev => ({ ...prev, isCompleted, isLoading: false }));
-      } catch {
+      } catch (error) {
+        console.error('Failed to load onboarding completion state:', error);
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -111,3 +112,5 @@ export function useOnboarding() {
     resetOnboarding,
   };
 }
+
+export type OnboardingHook = ReturnType<typeof useOnboarding>;

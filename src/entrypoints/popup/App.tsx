@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,14 +21,9 @@ export default function App() {
   const { profile, profiles, loading: profileLoading, switchProfile, saveProfile } = useProfile();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { status } = useUserStatus();
-  const { isCompleted: onboardingCompleted, isLoading: onboardingLoading } = useOnboarding();
-  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const onboarding = useOnboarding();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
-
-  const handleOnboardingComplete = useCallback(() => {
-    setShowOnboarding(false);
-  }, []);
 
   const handleFillForm = async () => {
     try {
@@ -50,7 +45,7 @@ export default function App() {
 
   const isSubscribed = status?.subscription.isActive ?? false;
 
-  if (authLoading || onboardingLoading) {
+  if (authLoading || onboarding.isLoading) {
     return (
       <div className="w-[400px] min-h-[500px] flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -62,8 +57,8 @@ export default function App() {
     return <AuthPrompt onLogin={login} />;
   }
 
-  if (!onboardingCompleted && showOnboarding !== false) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+  if (!onboarding.isCompleted) {
+    return <Onboarding onboarding={onboarding} onComplete={() => {}} />;
   }
 
   if (profileLoading) {

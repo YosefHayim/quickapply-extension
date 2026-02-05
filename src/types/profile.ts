@@ -121,3 +121,13 @@ export interface PricingPlan {
   variantId: number;
   popular?: boolean;
 }
+
+export interface ResumeItem {
+  id: string;
+  name: string;
+  size: number;
+  date: number;
+  isDefault: boolean;
+  dataUrl: string;
+  mimeType: string;
+}

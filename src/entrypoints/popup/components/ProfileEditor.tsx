@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Upload, X, Plus, Trash2 } from 'lucide-react';
+import { Save, Upload, X, Plus, Trash2, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +11,10 @@ import { fileToBase64, formatFileSize } from '@/lib/utils';
 interface ProfileEditorProps {
   profile: UserProfile;
   onSave: (profile: UserProfile) => Promise<void>;
+  onOpenResumeManager?: () => void;
 }
 
-export default function ProfileEditor({ profile, onSave }: ProfileEditorProps) {
+export default function ProfileEditor({ profile, onSave, onOpenResumeManager }: ProfileEditorProps) {
   const [formData, setFormData] = useState({
     ...profile,
     customFields: profile.customFields || {},
@@ -306,6 +307,18 @@ export default function ProfileEditor({ profile, onSave }: ProfileEditorProps) {
               </label>
             )}
           </div>
+
+          {onOpenResumeManager && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenResumeManager}
+              className="w-full h-8 mt-2 text-xs"
+            >
+              <FolderOpen className="h-3.5 w-3.5 mr-1.5" />
+              Manage Multiple Resumes
+            </Button>
+          )}
         </CardContent>
       </Card>
 

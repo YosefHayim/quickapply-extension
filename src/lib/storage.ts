@@ -1,4 +1,4 @@
-import type { UserProfile, ExtensionSettings, LicenseInfo, User } from '@/types/profile';
+import type { UserProfile, ExtensionSettings, LicenseInfo, User, ResumeItem } from '@/types/profile';
 import { generateId } from './utils';
 
 export const STORAGE_KEYS = {
@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   JWT: 'jwt',
   REFRESH_TOKEN: 'refreshToken',
   USER: 'user',
+  RESUMES: 'resumes',
 } as const;
 
 function createDefaultProfile(): UserProfile {
@@ -212,4 +213,52 @@ export async function getStoredUser(): Promise<User | null> {
 export async function clearAuth(): Promise<void> {
   await chrome.storage.session.remove(STORAGE_KEYS.JWT);
   await chrome.storage.local.remove([STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER]);
+}
+
+export async function getResumes(): Promise<ResumeItem[]> {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.RESUMES);
+  return (result[STORAGE_KEYS.RESUMES] as ResumeItem[]) || [];
+}
+
+export async function saveResumes(resumes: ResumeItem[]): Promise<void> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.RESUMES]: resumes });
+}
+
+export async function addResume(resume: ResumeItem): Promise<void> {
+  const resumes = await getResumes();
+  if (resume.isDefault) {
+    resumes.forEach((r) => (r.isDefault = false));
+  }
+  resumes.push(resume);
+  await saveResumes(resumes);
+}
+
+export async function updateResume(id: string, updates: Partial<ResumeItem>): Promise<void> {
+  const resumes = await getResumes();
+  const index = resumes.findIndex((r) => r.id === id);
+  if (index !== -1) {
+    if (updates.isDefault) {
+      resumes.forEach((r) => (r.isDefault = false));
+    }
+    resumes[index] = { ...resumes[index], ...updates };
+    await saveResumes(resumes);
+  }
+}
+
+export async function deleteResume(id: string): Promise<void> {
+  const resumes = await getResumes();
+  const filtered = resumes.filter((r) => r.id !== id);
+  if (filtered.length > 0 && !filtered.some((r) => r.isDefault)) {
+    filtered[0].isDefault = true;
+  }
+  await saveResumes(filtered);
+}
+
+export async function setDefaultResume(id: string): Promise<void> {
+  const resumes = await getResumes();
+  if (!resumes.some((resume) => resume.id === id)) {
+    return;
+  }
+  resumes.forEach((r) => (r.isDefault = r.id === id));
+  await saveResumes(resumes);
 }

@@ -14,6 +14,7 @@ import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
 import AuthPrompt from './components/AuthPrompt';
 import StatusBanner from './components/StatusBanner';
+import ResumeManager from './components/ResumeManager';
 import ApplicationHistory from './components/ApplicationHistory';
 import { Onboarding } from './components/onboarding';
 
@@ -25,6 +26,7 @@ export default function App() {
   const onboarding = useOnboarding();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
+  const [showResumeManager, setShowResumeManager] = useState(false);
 
   const handleFillForm = async () => {
     try {
@@ -68,6 +70,10 @@ export default function App() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  if (showResumeManager) {
+    return <ResumeManager onBack={() => setShowResumeManager(false)} />;
   }
 
   return (
@@ -168,7 +174,13 @@ export default function App() {
         </TabsContent>
 
         <TabsContent value="profile" className="mt-4">
-          {profile && <ProfileEditor profile={profile} onSave={saveProfile} />}
+          {profile && (
+            <ProfileEditor
+              profile={profile}
+              onSave={saveProfile}
+              onOpenResumeManager={() => setShowResumeManager(true)}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">

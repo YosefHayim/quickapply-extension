@@ -7,10 +7,11 @@ import {
   onStorageChange,
   STORAGE_KEYS,
 } from '@/lib/storage';
-import { generateId } from '@/lib/utils';
+import { base64ToFile, fileToBase64, generateId } from '@/lib/utils';
 import type { ResumeItem } from '@/types/profile';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE_MB = 3.5;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/msword',
@@ -26,8 +27,18 @@ export function useResumes() {
     setLoading(true);
     try {
       const data = await getResumes();
-      setResumes(data);
+      const normalized = data.map((resume) => ({
+        ...resume,
+        data:
+          resume.data ??
+          (resume as ResumeItem & { dataUrl?: string }).dataUrl ??
+          '',
+      }));
+      setResumes(normalized);
       setError(null);
+    } catch (err) {
+      console.error('Failed to load resumes:', err);
+      setError('Failed to load resumes');
     } finally {
       setLoading(false);
     }
@@ -48,7 +59,7 @@ export function useResumes() {
       return 'Please upload a PDF, DOC, or DOCX file';
     }
     if (file.size > MAX_FILE_SIZE) {
-      return 'File size must be less than 5MB';
+      return `File size must be less than ${MAX_FILE_SIZE_MB}MB`;
     }
     return null;
   }, []);
@@ -57,60 +68,69 @@ export function useResumes() {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
-      return Promise.reject(new Error(validationError));
+      throw new Error(validationError);
     }
 
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const dataUrl = reader.result as string;
-          const isFirst = resumes.length === 0;
-          
-          const resume: ResumeItem = {
-            id: generateId(),
-            name: file.name,
-            size: file.size,
-            date: Date.now(),
-            isDefault: isFirst,
-            dataUrl,
-            mimeType: file.type || 'application/pdf',
-          };
+    try {
+      const [data, existingResumes] = await Promise.all([fileToBase64(file), getResumes()]);
+      const isFirst = existingResumes.length === 0;
 
-          await addResume(resume);
-          setError(null);
-          resolve(resume);
-        } catch (err) {
-          setError('Failed to upload resume');
-          reject(err);
-        }
+      const resume: ResumeItem = {
+        id: generateId(),
+        name: file.name,
+        size: file.size,
+        date: Date.now(),
+        isDefault: isFirst,
+        data,
+        mimeType: file.type || 'application/pdf',
       };
-      reader.onerror = () => {
-        setError('Failed to read file');
-        reject(reader.error);
-      };
-      reader.readAsDataURL(file);
-    });
-  }, [resumes.length, validateFile]);
+
+      await addResume(resume);
+      setError(null);
+      return resume;
+    } catch (err) {
+      console.error('Failed to upload resume:', err);
+      setError('Failed to upload resume');
+      throw err;
+    }
+  }, [validateFile]);
 
   const removeResume = useCallback(async (id: string) => {
-    await deleteResume(id);
+    try {
+      await deleteResume(id);
+    } catch (err) {
+      console.error('Failed to delete resume:', err);
+      setError('Failed to delete resume');
+      throw err;
+    }
   }, []);
 
   const makeDefault = useCallback(async (id: string) => {
-    await setDefaultResume(id);
+    try {
+      await setDefaultResume(id);
+    } catch (err) {
+      console.error('Failed to set default resume:', err);
+      setError('Failed to set default resume');
+      throw err;
+    }
   }, []);
 
   const previewResume = useCallback((resume: ResumeItem) => {
-    const blob = dataUrlToBlob(resume.dataUrl);
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try {
+      const base64 = extractBase64(resume.data);
+      const file = base64ToFile(base64, resume.name, resume.mimeType);
+      const url = URL.createObjectURL(file);
+      const previewWindow = window.open(url, '_blank');
+      const cleanup = () => URL.revokeObjectURL(url);
+      if (previewWindow) {
+        previewWindow.addEventListener('beforeunload', cleanup);
+      }
+      setTimeout(cleanup, 30000);
+    } catch (err) {
+      console.error('Failed to preview resume:', err);
+      setError('Failed to preview resume');
+    }
   }, []);
-
-  const getDefaultResume = useCallback(() => {
-    return resumes.find((r) => r.isDefault) ?? resumes[0] ?? null;
-  }, [resumes]);
 
   const defaultResume = resumes.find((r) => r.isDefault) ?? resumes[0] ?? null;
 
@@ -123,22 +143,22 @@ export function useResumes() {
     removeResume,
     makeDefault,
     previewResume,
-    getDefaultResume,
     refresh: loadResumes,
     clearError: () => setError(null),
   };
 }
 
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(',');
-  const mimeMatch = header.match(/:(.*?);/);
-  const mimeType = mimeMatch ? mimeMatch[1] : 'application/pdf';
-  
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+function extractBase64(data: string): string {
+  if (!data) {
+    throw new Error('Missing resume data');
   }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
+  if (data.startsWith('data:')) {
+    const parts = data.split(',');
+    if (parts.length < 2 || !parts[1]) {
+      throw new Error('Invalid data URL');
+    }
+    return parts[1];
+  }
+
+  return data;
 }

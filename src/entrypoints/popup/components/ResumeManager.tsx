@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowLeft, Plus, FileText, Info, Eye, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Info, Eye, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useResumes } from '@/hooks/useResumes';
 import { formatFileSize, formatDate } from '@/lib/utils';
@@ -37,6 +37,8 @@ export default function ResumeManager({ onBack }: ResumeManagerProps) {
     setDeletingId(id);
     try {
       await removeResume(id);
+    } catch (error) {
+      console.error('Failed to delete resume:', error);
     } finally {
       setDeletingId(null);
     }
@@ -53,6 +55,7 @@ export default function ResumeManager({ onBack }: ResumeManagerProps) {
             size="icon"
             onClick={onBack}
             className="h-8 w-8 rounded-lg hover:bg-muted"
+            aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -64,6 +67,7 @@ export default function ResumeManager({ onBack }: ResumeManagerProps) {
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className="h-8 w-8 rounded-lg hover:bg-muted"
+          aria-label="Add resume"
         >
           <Plus className={cn('h-4 w-4', uploading && 'animate-pulse')} />
         </Button>
@@ -83,17 +87,21 @@ export default function ResumeManager({ onBack }: ResumeManagerProps) {
           {error && (
             <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
               <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={clearError}
-                className="text-red-500 hover:text-red-700 dark:hover:text-red-300 text-lg leading-none"
+                className="h-7 w-7 text-red-500 hover:text-red-700 dark:hover:text-red-300"
+                aria-label="Dismiss error"
               >
-                &times;
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           )}
           
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
+              <span className="sr-only">Loading resumes</span>
               <div className="h-6 w-6 border-2 border-muted-foreground/30 border-t-foreground rounded-full animate-spin" />
             </div>
           ) : isEmpty ? (
@@ -201,6 +209,7 @@ function ResumeCard({ resume, onPreview, onDelete, onSetDefault, isDeleting }: R
           variant="outline"
           size="sm"
           onClick={onPreview}
+          disabled={isDeleting}
           className="h-8 flex-1 text-xs rounded-lg"
         >
           <Eye className="h-3.5 w-3.5 mr-1.5" />
@@ -223,6 +232,7 @@ function ResumeCard({ resume, onPreview, onDelete, onSetDefault, isDeleting }: R
           variant="ghost"
           size="sm"
           onClick={onSetDefault}
+          disabled={isDeleting}
           className="h-8 w-full mt-2 text-xs rounded-lg text-[#10B981] hover:text-[#10B981] hover:bg-[#10B981]/10"
         >
           Set as Default

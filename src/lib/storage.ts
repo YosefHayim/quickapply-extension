@@ -256,6 +256,9 @@ export async function deleteResume(id: string): Promise<void> {
 
 export async function setDefaultResume(id: string): Promise<void> {
   const resumes = await getResumes();
+  if (!resumes.some((resume) => resume.id === id)) {
+    return;
+  }
   resumes.forEach((r) => (r.isDefault = r.id === id));
   await saveResumes(resumes);
 }

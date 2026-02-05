@@ -128,6 +128,6 @@ export interface ResumeItem {
   size: number;
   date: number;
   isDefault: boolean;
-  dataUrl: string;
+  data: string;
   mimeType: string;
 }

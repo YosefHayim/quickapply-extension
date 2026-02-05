@@ -45,7 +45,7 @@ export default function PartialFill({
             <div className="flex items-center gap-2 mt-2">
               <Badge
                 variant="outline"
-                className="bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30 text-xs"
+                className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30 text-xs"
               >
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 {filledCount} filled
@@ -64,7 +64,7 @@ export default function PartialFill({
                 <ul className="space-y-1">
                   {skippedFields.slice(0, 5).map((field, index) => (
                     <li
-                      key={index}
+                      key={`${field}-${index}`}
                       className="text-xs text-[#FAFAFA]/70 flex items-center gap-1.5"
                     >
                       <span className="h-1 w-1 rounded-full bg-[#F59E0B]/50 shrink-0" />

@@ -11,7 +11,7 @@ interface FillProgressProps {
 }
 
 export default function FillProgress({ filled, total, onCancel, className }: FillProgressProps) {
-  const percentage = total > 0 ? Math.round((filled / total) * 100) : 0;
+  const percentage = total > 0 ? Math.min(100, Math.round((filled / total) * 100)) : 0;
 
   return (
     <Card

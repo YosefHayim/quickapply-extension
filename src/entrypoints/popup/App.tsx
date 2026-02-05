@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut } from 'lucide-react';
+import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
 import AuthPrompt from './components/AuthPrompt';
 import StatusBanner from './components/StatusBanner';
+import ApplicationHistory from './components/ApplicationHistory';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
@@ -21,6 +22,7 @@ export default function App() {
   const { status } = useUserStatus();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleFillForm = async () => {
     try {
@@ -62,6 +64,10 @@ export default function App() {
     );
   }
 
+  if (showHistory) {
+    return <ApplicationHistory onBack={() => setShowHistory(false)} />;
+  }
+
   return (
     <div className="w-[400px] min-h-[500px] bg-background text-foreground flex flex-col">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
@@ -87,12 +93,15 @@ export default function App() {
       {status && <StatusBanner status={status} onUpgrade={() => setActiveTab('pricing')} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">
             <Zap className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="profile">
             <User className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="history" onClick={() => setShowHistory(true)}>
+            <History className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="pricing">
             <CreditCard className="h-4 w-4" />

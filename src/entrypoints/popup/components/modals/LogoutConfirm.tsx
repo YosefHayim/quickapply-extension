@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface LogoutConfirmProps {
   onConfirm: () => void;
@@ -8,13 +10,21 @@ interface LogoutConfirmProps {
 }
 
 export default function LogoutConfirm({ onConfirm, onCancel }: LogoutConfirmProps) {
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onCancel);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onCancel}
     >
       <Card
-        className="w-[340px] border-orange-500/30 bg-[#171717] shadow-2xl shadow-orange-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-orange-500/30 shadow-2xl shadow-orange-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-4">
@@ -23,6 +33,7 @@ export default function LogoutConfirm({ onConfirm, onCancel }: LogoutConfirmProp
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onCancel}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -30,7 +41,7 @@ export default function LogoutConfirm({ onConfirm, onCancel }: LogoutConfirmProp
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500/15">
               <LogOut className="h-7 w-7 text-orange-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Sign Out?
             </CardTitle>
           </div>

@@ -1,6 +1,8 @@
+import { useId, useMemo } from 'react';
 import { Keyboard, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface KeyboardShortcutsProps {
   onClose: () => void;
@@ -22,13 +24,30 @@ const SHORTCUTS = [
 ];
 
 export default function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onClose);
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const shortcuts = useMemo(
+    () =>
+      SHORTCUTS.map((shortcut) => ({
+        ...shortcut,
+        keys: shortcut.keys.map((key) => (key === 'Ctrl' && isMac ? 'Cmd' : key)),
+      })),
+    [isMac]
+  );
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <Card
-        className="w-[340px] border-cyan-500/30 bg-[#171717] shadow-2xl shadow-cyan-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-cyan-500/30 shadow-2xl shadow-cyan-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-3">
@@ -37,6 +56,7 @@ export default function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onClose}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -44,13 +64,13 @@ export default function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500/15">
               <Keyboard className="h-7 w-7 text-cyan-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Keyboard Shortcuts
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-3 pb-6">
-          {SHORTCUTS.map((shortcut) => (
+          {shortcuts.map((shortcut) => (
             <div
               key={shortcut.description}
               className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3"
@@ -61,7 +81,7 @@ export default function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
               <div className="flex items-center gap-1">
                 {shortcut.keys.map((key, index) => (
                   <span key={index}>
-                    <kbd className="inline-flex min-w-[28px] items-center justify-center rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-[#FAFAFA] shadow-sm">
+                    <kbd className="inline-flex min-w-[28px] items-center justify-center rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground shadow-sm">
                       {key}
                     </kbd>
                     {index < shortcut.keys.length - 1 && (

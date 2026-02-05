@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface AddProfileProps {
   onSave: (name: string) => void;
@@ -12,6 +13,8 @@ interface AddProfileProps {
 
 export default function AddProfile({ onSave, onCancel }: AddProfileProps) {
   const [name, setName] = useState('');
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onCancel);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +31,12 @@ export default function AddProfile({ onSave, onCancel }: AddProfileProps) {
       onClick={onCancel}
     >
       <Card
-        className="w-[340px] border-emerald-500/30 bg-[#171717] shadow-2xl shadow-emerald-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-emerald-500/30 shadow-2xl shadow-emerald-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-4">
@@ -37,6 +45,7 @@ export default function AddProfile({ onSave, onCancel }: AddProfileProps) {
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onCancel}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -44,7 +53,7 @@ export default function AddProfile({ onSave, onCancel }: AddProfileProps) {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
               <UserPlus className="h-7 w-7 text-emerald-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Create New Profile
             </CardTitle>
           </div>
@@ -52,16 +61,14 @@ export default function AddProfile({ onSave, onCancel }: AddProfileProps) {
         <CardContent className="pb-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="profile-name" className="text-[#FAFAFA]">
-                Profile Name
-              </Label>
+              <Label htmlFor="profile-name">Profile Name</Label>
               <Input
                 id="profile-name"
                 type="text"
                 placeholder="e.g., Tech Jobs, Marketing"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="border-white/10 bg-white/5 text-[#FAFAFA] placeholder:text-muted-foreground focus-visible:ring-emerald-500/50"
+                className="focus-visible:ring-emerald-500/50"
                 autoFocus
               />
             </div>

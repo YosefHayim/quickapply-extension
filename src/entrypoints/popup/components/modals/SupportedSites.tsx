@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { Globe, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface SupportedSitesProps {
   onClose: () => void;
@@ -19,13 +21,21 @@ const SUPPORTED_PLATFORMS = [
 ];
 
 export default function SupportedSites({ onClose }: SupportedSitesProps) {
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onClose);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <Card
-        className="w-[340px] border-blue-500/30 bg-[#171717] shadow-2xl shadow-blue-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-blue-500/30 shadow-2xl shadow-blue-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-3">
@@ -34,6 +44,7 @@ export default function SupportedSites({ onClose }: SupportedSitesProps) {
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onClose}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -41,7 +52,7 @@ export default function SupportedSites({ onClose }: SupportedSitesProps) {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500/15">
               <Globe className="h-7 w-7 text-blue-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Supported Job Sites
             </CardTitle>
           </div>
@@ -57,7 +68,7 @@ export default function SupportedSites({ onClose }: SupportedSitesProps) {
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-[#FAFAFA]">
+                  <span className="text-sm font-medium text-foreground">
                     {platform.name}
                   </span>
                   <span className="text-xs text-muted-foreground">

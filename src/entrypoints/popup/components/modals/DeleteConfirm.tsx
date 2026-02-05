@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface DeleteConfirmProps {
   profileName: string;
@@ -9,13 +11,21 @@ interface DeleteConfirmProps {
 }
 
 export default function DeleteConfirm({ profileName, onConfirm, onCancel }: DeleteConfirmProps) {
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onCancel);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onCancel}
     >
       <Card
-        className="w-[340px] border-red-500/30 bg-[#171717] shadow-2xl shadow-red-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-red-500/30 shadow-2xl shadow-red-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-4">
@@ -24,6 +34,7 @@ export default function DeleteConfirm({ profileName, onConfirm, onCancel }: Dele
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onCancel}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -31,7 +42,7 @@ export default function DeleteConfirm({ profileName, onConfirm, onCancel }: Dele
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
               <Trash2 className="h-7 w-7 text-red-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Delete Profile?
             </CardTitle>
           </div>
@@ -39,7 +50,7 @@ export default function DeleteConfirm({ profileName, onConfirm, onCancel }: Dele
         <CardContent className="space-y-5 pb-6">
           <p className="text-center text-sm text-muted-foreground">
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-[#FAFAFA]">'{profileName}'</span>?
+            <span className="font-semibold text-foreground">'{profileName}'</span>?
             This cannot be undone.
           </p>
 

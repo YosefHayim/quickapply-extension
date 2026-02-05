@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { AlertTriangle, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useModalFocusTrap } from '@/hooks/useModalFocusTrap';
 
 interface LimitReachedProps {
   dailyLimit: number;
@@ -10,13 +12,21 @@ interface LimitReachedProps {
 }
 
 export default function LimitReached({ dailyLimit, usedCount, onUpgrade, onClose }: LimitReachedProps) {
+  const titleId = useId();
+  const dialogRef = useModalFocusTrap(onClose);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <Card
-        className="w-[340px] border-amber-500/30 bg-[#171717] shadow-2xl shadow-amber-500/10"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-[340px] border-amber-500/30 shadow-2xl shadow-amber-500/10"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative pb-4">
@@ -25,6 +35,7 @@ export default function LimitReached({ dailyLimit, usedCount, onUpgrade, onClose
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={onClose}
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -32,7 +43,7 @@ export default function LimitReached({ dailyLimit, usedCount, onUpgrade, onClose
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15">
               <AlertTriangle className="h-7 w-7 text-amber-500" />
             </div>
-            <CardTitle className="text-center text-lg text-[#FAFAFA]">
+            <CardTitle id={titleId} className="text-center text-lg">
               Daily Limit Reached
             </CardTitle>
           </div>
@@ -40,8 +51,8 @@ export default function LimitReached({ dailyLimit, usedCount, onUpgrade, onClose
         <CardContent className="space-y-5 pb-6">
           <p className="text-center text-sm text-muted-foreground">
             You've used{' '}
-            <span className="font-semibold text-[#FAFAFA]">{usedCount}</span> of{' '}
-            <span className="font-semibold text-[#FAFAFA]">{dailyLimit}</span> free
+            <span className="font-semibold text-foreground">{usedCount}</span> of{' '}
+            <span className="font-semibold text-foreground">{dailyLimit}</span> free
             applications today.
           </p>
 
@@ -54,7 +65,7 @@ export default function LimitReached({ dailyLimit, usedCount, onUpgrade, onClose
               Upgrade to Pro
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Resets at midnight local time
+              Resets at midnight UTC
             </p>
           </div>
         </CardContent>

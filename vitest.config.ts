@@ -7,8 +7,10 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['vitest.setup.ts'],
     mockReset: true,
     restoreMocks: true,
+    include: ['src/__tests__/**/*.test.ts'],
+    exclude: ['backend/**', 'node_modules/**'],
   },
 });

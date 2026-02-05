@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut } from 'lucide-react';
+import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
 import AuthPrompt from './components/AuthPrompt';
 import StatusBanner from './components/StatusBanner';
+import ApplicationHistory from './components/ApplicationHistory';
 import { Onboarding } from './components/onboarding';
 
 export default function App() {
@@ -94,12 +95,15 @@ export default function App() {
       {status && <StatusBanner status={status} onUpgrade={() => setActiveTab('pricing')} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">
             <Zap className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="profile">
             <User className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="history">
+            <History className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="pricing">
             <CreditCard className="h-4 w-4" />
@@ -165,6 +169,10 @@ export default function App() {
 
         <TabsContent value="profile" className="mt-4">
           {profile && <ProfileEditor profile={profile} onSave={saveProfile} />}
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4">
+          <ApplicationHistory onBack={() => setActiveTab('dashboard')} />
         </TabsContent>
 
         <TabsContent value="pricing" className="mt-4">

@@ -1,6 +1,7 @@
 import { detectFormFields, isJobApplicationPage, detectPlatform } from '@/lib/form-detection';
 import { fillForm, highlightFields, clearHighlights } from '@/lib/form-filler';
 import { checkDuplicate, logSubmission } from '@/lib/submissions';
+import { getSettings } from '@/lib/storage';
 import type { UserProfile, DetectedField } from '@/types/profile';
 import type { UserStatus } from 'shared/types';
 
@@ -241,7 +242,10 @@ export default defineContentScript({
           return;
         }
 
-        const result = await fillForm(detectedFields, profile);
+        const settings = await getSettings();
+        const fillDelayMs = settings.fillDelay ?? 0;
+
+        const result = await fillForm(detectedFields, profile, fillDelayMs);
 
         chrome.runtime.sendMessage({
           action: 'fill-result',

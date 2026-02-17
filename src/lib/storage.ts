@@ -68,6 +68,7 @@ function createDefaultSettings(): ExtensionSettings {
     theme: 'system',
     autoDetectForms: true,
     showNotifications: true,
+    fillDelay: 0,
   };
 }
 

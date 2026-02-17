@@ -59,3 +59,42 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
     timeoutId = setTimeout(() => func(...args), wait);
   };
 }
+
+export interface ProfileCompletionResult {
+  percentage: number;
+  missingFields: string[];
+}
+
+export function calculateProfileCompletion(profile: {
+  personal: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: { city: string; state: string; country: string };
+    linkedinUrl: string;
+  };
+  experience: { totalYears: number; currentTitle: string };
+  files: { resume?: unknown };
+}): ProfileCompletionResult {
+  const checks: Array<{ label: string; filled: boolean }> = [
+    { label: 'First name', filled: Boolean(profile.personal.firstName.trim()) },
+    { label: 'Last name', filled: Boolean(profile.personal.lastName.trim()) },
+    { label: 'Email', filled: Boolean(profile.personal.email.trim()) },
+    { label: 'Phone', filled: Boolean(profile.personal.phone.trim()) },
+    { label: 'City', filled: Boolean(profile.personal.address.city.trim()) },
+    { label: 'Country', filled: Boolean(profile.personal.address.country.trim()) },
+    { label: 'LinkedIn URL', filled: Boolean(profile.personal.linkedinUrl.trim()) },
+    { label: 'Job title', filled: Boolean(profile.experience.currentTitle.trim()) },
+    { label: 'Years of experience', filled: profile.experience.totalYears > 0 },
+    { label: 'Resume', filled: Boolean(profile.files.resume) },
+  ];
+
+  const filled = checks.filter((c) => c.filled).length;
+  const missingFields = checks.filter((c) => !c.filled).map((c) => c.label);
+
+  return {
+    percentage: Math.round((filled / checks.length) * 100),
+    missingFields,
+  };
+}

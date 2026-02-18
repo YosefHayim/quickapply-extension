@@ -87,6 +87,10 @@ async function fillFileInput(element: HTMLInputElement, storedFile: StoredFile):
   }
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getProfileValue(profile: UserProfile, fieldType: string): string | boolean | undefined {
   const mappings: Record<string, () => string | boolean | undefined> = {
     firstName: () => profile.personal.firstName,
@@ -120,7 +124,8 @@ function getProfileValue(profile: UserProfile, fieldType: string): string | bool
 
 export async function fillForm(
   fields: DetectedField[],
-  profile: UserProfile
+  profile: UserProfile,
+  fillDelayMs = 0
 ): Promise<FillResult> {
   const result: FillResult = {
     filled: 0,
@@ -137,6 +142,7 @@ export async function fillForm(
           const success = await fillFileInput(element as HTMLInputElement, profile.files.resume);
           if (success) {
             result.filled++;
+            if (fillDelayMs > 0) await delay(fillDelayMs);
           } else {
             result.skipped++;
           }
@@ -154,6 +160,7 @@ export async function fillForm(
           );
           if (success) {
             result.filled++;
+            if (fillDelayMs > 0) await delay(fillDelayMs);
           } else {
             result.skipped++;
           }
@@ -184,6 +191,7 @@ export async function fillForm(
 
       if (success) {
         result.filled++;
+        if (fillDelayMs > 0) await delay(fillDelayMs);
       } else {
         result.skipped++;
       }

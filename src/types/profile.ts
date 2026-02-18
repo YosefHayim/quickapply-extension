@@ -79,6 +79,7 @@ export interface ExtensionSettings {
   theme: 'light' | 'dark' | 'system';
   autoDetectForms: boolean;
   showNotifications: boolean;
+  fillDelay: number;
 }
 
 export interface LicenseInfo {

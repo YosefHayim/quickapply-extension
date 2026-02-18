@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut, History } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Moon, Sun, Settings, Zap, FileText, User, CreditCard, LogOut, History, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserStatus } from '@/hooks/useUserStatus';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { calculateProfileCompletion } from '@/lib/utils';
 import ProfileEditor from './components/ProfileEditor';
 import PricingView from './components/PricingView';
 import SettingsView from './components/SettingsView';
@@ -18,15 +19,29 @@ import ResumeManager from './components/ResumeManager';
 import ApplicationHistory from './components/ApplicationHistory';
 import { Onboarding } from './components/onboarding';
 
+const MAX_DISPLAYED_MISSING_FIELDS = 3;
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { profile, profiles, loading: profileLoading, switchProfile, saveProfile } = useProfile();
-  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { status } = useUserStatus();
   const onboarding = useOnboarding();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [fillStatus, setFillStatus] = useState<{ filled: number; total: number } | null>(null);
   const [showResumeManager, setShowResumeManager] = useState(false);
+  const [isJobPage, setIsJobPage] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+      if (!tab?.id) return;
+      chrome.tabs.sendMessage(tab.id, { action: 'check-page' })
+        .then((res: { isJobPage: boolean } | undefined) => {
+          setIsJobPage(res?.isJobPage ?? false);
+        })
+        .catch(() => setIsJobPage(false));
+    });
+  }, []);
 
   const handleFillForm = async () => {
     try {
@@ -120,6 +135,25 @@ export default function App() {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4 mt-4">
+          {isJobPage !== null && (
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+                isJobPage
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {isJobPage ? (
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              ) : (
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              )}
+              {isJobPage
+                ? 'Job application page detected — ready to fill!'
+                : 'Navigate to a job application page to fill'}
+            </div>
+          )}
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -150,6 +184,30 @@ export default function App() {
                   {profile.files.resume.name}
                 </div>
               )}
+              {profile && (() => {
+                const { percentage, missingFields } = calculateProfileCompletion(profile);
+                return (
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Profile completeness</span>
+                      <span className={`font-medium ${percentage === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {percentage}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${percentage === 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    {missingFields.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Missing: {missingFields.slice(0, MAX_DISPLAYED_MISSING_FIELDS).join(', ')}{missingFields.length > MAX_DISPLAYED_MISSING_FIELDS ? ` +${missingFields.length - MAX_DISPLAYED_MISSING_FIELDS} more` : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

@@ -2,6 +2,7 @@ export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
       console.log('QuickApply installed');
+      chrome.tabs.create({ url: chrome.runtime.getURL('/popup.html') });
     }
   });
 

@@ -1,6 +1,7 @@
 import { detectFormFields, isJobApplicationPage, detectPlatform } from '@/lib/form-detection';
 import { fillForm, highlightFields, clearHighlights } from '@/lib/form-filler';
-import { checkDuplicate, logSubmission } from '@/lib/submissions';
+import { checkDuplicate, logSubmission, normalizeUrl } from '@/lib/submissions';
+import { getSettings } from '@/lib/storage';
 import type { UserProfile, DetectedField } from '@/types/profile';
 import type { UserStatus } from 'shared/types';
 
@@ -220,7 +221,8 @@ export default defineContentScript({
           }
         }
 
-        const duplicateCheck = await checkDuplicate(currentUrl);
+        const normalizedUrl = normalizeUrl(currentUrl);
+        const duplicateCheck = await checkDuplicate(normalizedUrl);
         if (duplicateCheck.isDuplicate && duplicateCheck.submittedAt) {
           const formattedDate = formatDateForToast(duplicateCheck.submittedAt);
           showToast(`Already applied to this job on ${formattedDate}`, 'warning');
@@ -237,11 +239,16 @@ export default defineContentScript({
         detectedFields = detectFormFields();
         
         if (detectedFields.length === 0) {
+          showToast('No form fields detected on this page', 'warning');
           console.log('No form fields detected');
           return;
         }
 
-        const result = await fillForm(detectedFields, profile);
+        const settings = await getSettings();
+        const fillDelayMs = settings.fillDelay ?? 0;
+        const showNotifications = settings.showNotifications !== false;
+
+        const result = await fillForm(detectedFields, profile, fillDelayMs);
 
         chrome.runtime.sendMessage({
           action: 'fill-result',
@@ -250,7 +257,7 @@ export default defineContentScript({
         });
 
         if (result.filled > 0) {
-          await logSubmission(currentUrl, platform);
+          await logSubmission(normalizedUrl, platform);
           
           if (status && !hasUnlimitedAccess(status)) {
             const newFillsToday = status.usage.fillsToday + 1;
@@ -260,12 +267,14 @@ export default defineContentScript({
             
             await updateCachedUsage(newFillsToday, newFillsRemaining);
             
-            showToast(
-              `Form filled! ${result.filled} fields completed`,
-              'success',
-              newFillsRemaining !== null ? `${newFillsRemaining} fills remaining today` : undefined
-            );
-          } else {
+            if (showNotifications) {
+              showToast(
+                `Form filled! ${result.filled} fields completed`,
+                'success',
+                newFillsRemaining !== null ? `${newFillsRemaining} fills remaining today` : undefined
+              );
+            }
+          } else if (showNotifications) {
             showToast(`Form filled! ${result.filled} fields completed`, 'success');
           }
         }

@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { getSettings, saveSettings, getProfiles } from '@/lib/storage';
 import type { ExtensionSettings } from '@/types/profile';
 
+const FILL_DELAY_LABELS: Record<number, string> = {
+  0: 'Instant',
+  100: 'Fast (100ms)',
+  300: 'Normal (300ms)',
+  600: 'Slow (600ms)',
+};
+
 export default function SettingsView() {
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
 
@@ -14,7 +21,7 @@ export default function SettingsView() {
     getSettings().then(setSettings);
   }, []);
 
-  const handleSettingChange = async (key: keyof ExtensionSettings, value: boolean) => {
+  const handleSettingChange = async (key: keyof ExtensionSettings, value: boolean | number) => {
     if (!settings) return;
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
@@ -78,6 +85,9 @@ export default function SettingsView() {
     return <div className="text-center text-sm text-muted-foreground">Loading...</div>;
   }
 
+  const fillDelayMs = settings.fillDelay ?? 0;
+  const fillDelayLabel = FILL_DELAY_LABELS[fillDelayMs] ?? `${fillDelayMs}ms`;
+
   return (
     <div className="space-y-4 max-h-[400px] overflow-y-auto">
       <Card>
@@ -109,6 +119,37 @@ export default function SettingsView() {
               checked={settings.showNotifications}
               onCheckedChange={(checked) => handleSettingChange('showNotifications', checked)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Fill Speed</Label>
+                <p className="text-xs text-muted-foreground">
+                  Delay between filling each field
+                </p>
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">{fillDelayLabel}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={1}
+              value={[0, 100, 300, 600].indexOf(fillDelayMs) >= 0 ? [0, 100, 300, 600].indexOf(fillDelayMs) : 0}
+              onChange={(e) => {
+                const steps = [0, 100, 300, 600];
+                handleSettingChange('fillDelay', steps[Number(e.target.value)]);
+              }}
+              className="w-full accent-primary"
+              aria-label="Fill speed delay"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Instant</span>
+              <span>Fast</span>
+              <span>Normal</span>
+              <span>Slow</span>
+            </div>
           </div>
         </CardContent>
       </Card>
